@@ -8,11 +8,14 @@ import routeChannels from './routes/routeChannels';
 import routeMeasurements from './routes/routeMeasurements'
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, `../${process.env.NODE_ENV ? process.env.NODE_ENV as string : ""}.env`) });
+dotenv.config({ path: path.resolve(__dirname, "..", `${process.env.NODE_ENV ? process.env.NODE_ENV as string : ""}.env`) });
 const app = express();
 
 const port = process.env.PORT || 8080
 
+if (!fs.existsSync(path.resolve(__dirname, "..", process.env.CONFIG_DB_FILE as string))) {
+    throw new Error("The config.sqlite file not exists in path " + process.env.CONFIG_DB_FILE);
+}
 const jsonParser = bodyParser.json();
 app.use(jsonParser);
 
