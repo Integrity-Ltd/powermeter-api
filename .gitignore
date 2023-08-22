@@ -2,3 +2,4 @@ node_modules/
 *.backport
 coverage/
 *.log
+.env
