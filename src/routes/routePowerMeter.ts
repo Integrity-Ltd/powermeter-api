@@ -11,7 +11,7 @@ const router = Router();
 /**
  * Get all powermeter from DB
  */
-router.get("/", async (req, res) => {
+router.get("/", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     if (req.query.first && req.query.rowcount) {
         db.all("select * from power_meter limit ? offset ?", [parseInt(req.query.rowcount as string), parseInt(req.query.first as string)], (err, rows) => {
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
 /**
  * Get count of powermeter
  */
-router.get("/count", async (req, res) => {
+router.get("/count", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.get("select count(*) as count from power_meter", (err, rows) => {
         if (err) {
@@ -52,7 +52,7 @@ router.get("/count", async (req, res) => {
 /**
  * Get powermeter by ID
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.get("select * from power_meter where id = ? ", [req.params.id], (err, rows) => {
         if (err) {
@@ -67,7 +67,7 @@ router.get("/:id", async (req, res) => {
 /**
  * Delete powermeter by ID
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.run("delete from channels where power_meter_id = ? ", [req.params.id], async function (err) {
         if (err) {
@@ -101,7 +101,7 @@ router.delete("/:id", async (req, res) => {
 /**
  * Update powermeter by ID
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", (req, res) => {
     let valid: Joi.ValidationResult = power_meter.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -162,17 +162,20 @@ router.post("/", async (req, res) => {
                         try {
                             if (!fs.existsSync(dbFile)) {
                                 measurementsDB = new Database(dbFile);
-                                await runQuery(measurementsDB, `CREATE TABLE "Measurements" ("id" INTEGER NOT NULL,"channel" INTEGER,"measured_value" REAL,"recorded_time" INTEGER, PRIMARY KEY("id" AUTOINCREMENT))`, []);
+                                const result = await runQuery(measurementsDB, `CREATE TABLE "Measurements" ("id" INTEGER NOT NULL,"channel" INTEGER,"measured_value" REAL,"recorded_time" INTEGER, PRIMARY KEY("id" AUTOINCREMENT))`, []);
+                                console.log(result);
                             } else {
                                 measurementsDB = new Database(dbFile);
                             }
                             let channels: string[] = [];
                             for (let i: number = 1; i <= 12; i++) {
-                                await runQuery(db, "insert into channels (power_meter_id, channel, channel_name, enabled) values (?,?,?,?)", [lastID, i, `ch${i}`, true]);
+                                const result = await runQuery(db, "insert into channels (power_meter_id, channel, channel_name, enabled) values (?,?,?,?)", [lastID, i, `ch${i}`, true]);
+                                console.log(result);
                                 channels.push(i.toString())
                             }
                             measurementsDB.close();
-                            await getMeasurementsFromPowerMeter(dayjs(), req.body, channels);
+                            const result = await getMeasurementsFromPowerMeter(dayjs(), req.body, channels);
+                            console.log(result);
                         } catch (err) {
                             console.error(dayjs().format(), err);
                             if (err) {

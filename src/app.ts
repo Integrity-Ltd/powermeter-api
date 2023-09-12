@@ -29,13 +29,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 const router = Router();
-router.get("/json", async (req, res) => {
+router.get("/json", (req, res) => {
     res.send(swaggerDocument);
 })
 app.use('/api', router);
 
 
-const server = app.listen(port, async () => {
+const server = app.listen(port, () => {
     console.log(`App is running at http://localhost:${port}`);
 })
 

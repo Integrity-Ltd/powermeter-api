@@ -7,7 +7,7 @@ const router = Router();
 /**
  * Get all channels
  */
-router.get("/", async (req, res) => {
+router.get("/", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     if (req.query.first && req.query.rowcount) {
         db.all("select * from channels limit ? offset ?", [parseInt(req.query.rowcount as string), parseInt(req.query.first as string)], (err, rows) => {
@@ -49,7 +49,7 @@ router.get("/", async (req, res) => {
 /**
  * Get all channels count
  */
-router.get("/count", async (req, res) => {
+router.get("/count", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.get("select count(*) as count from channels", (err, rows) => {
         if (err) {
@@ -64,7 +64,7 @@ router.get("/count", async (req, res) => {
 /**
  * Get channel by ID
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.get("select * from channels where id = ? ", [req.params.id], (err, rows) => {
         if (err) {
@@ -79,7 +79,7 @@ router.get("/:id", async (req, res) => {
 /**
  * Delete channel by ID
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     db.run("delete from channels where id = ? ", [req.params.id], function (err) {
         if (err) {
@@ -94,7 +94,7 @@ router.delete("/:id", async (req, res) => {
 /**
  * Update channel by ID
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", (req, res) => {
     let valid: Joi.ValidationResult = channels.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -121,7 +121,7 @@ router.put("/:id", async (req, res) => {
 /**
  * Create channel
  */
-router.post("/", async (req, res) => {
+router.post("/", (req, res) => {
     let valid: Joi.ValidationResult = channels.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
