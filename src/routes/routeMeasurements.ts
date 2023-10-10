@@ -28,6 +28,7 @@ router.get("/report", async (req, res) => {
     const ip = req.query.ip as string;
     const details = req.query.details as string;
     const channel = parseInt(req.query.channel as string);
+    const multiplier = parseInt(req.query.multiplier as string);
 
     const configDB = new Database(process.env.CONFIG_DB_FILE as string);
 
@@ -51,6 +52,10 @@ router.get("/report", async (req, res) => {
         measurements = await getMeasurementsFromDBs(fromDate, toDate, ip, channel);
     }
     let result = getDetails(measurements, timeZone, details, false);
+    result = result.map((element: any) => {
+        element.multipliedValue = element.diff * multiplier;
+        return element;
+    })
     res.send(result);
 });
 

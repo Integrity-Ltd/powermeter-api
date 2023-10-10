@@ -13,6 +13,7 @@ const validate = (report: object): Joi.ValidationResult => {
         ip: Joi.string().ip().required(),
         channel: Joi.optional(),
         details: Joi.string().regex(/^(hourly|daily|monthly)$/).required(),
+        multiplier: Joi.number().positive().required()
     });
     return schema.validate(report);
 }
