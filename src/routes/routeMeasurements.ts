@@ -59,6 +59,18 @@ router.get("/report", async (req, res) => {
     res.send(result);
 });
 
+router.get("/getrawdata", async (req, res) => {
+    const ip = req.query.ip as string;
+    const channel = parseInt(req.query.channel as string);
+    const fromDate = dayjs(req.query.fromdate as string, "YYYY-MM-DD");//timeZone
+    const toDate = dayjs(req.query.todate as string, "YYYY-MM-DD");//timeZone
+    getMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
+        res.send(result);
+    }).catch((err) => {
+        console.error(err);
+    });
+})
+
 /**
  * Get monthly measurements from previous year
  * 

@@ -607,6 +607,16 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "multiplier",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "number"
+            }
           }
         ],
         "responses": {
