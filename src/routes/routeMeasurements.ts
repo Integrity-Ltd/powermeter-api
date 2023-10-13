@@ -4,7 +4,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import path from "path";
 import { Database } from "sqlite3";
-import { runQuery, getMeasurementsFromDBs, getDetails } from "../../../powermeter-utils/src/utils/DBUtils";
+import { runQuery, getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs } from "../../../powermeter-utils/src/utils/DBUtils";
 import fs from "fs";
 import report from "../models/report";
 import Joi from "joi";
@@ -64,47 +64,23 @@ router.get("/getrawdata", async (req, res) => {
     const channel = parseInt(req.query.channel as string);
     const fromDate = dayjs(req.query.fromdate as string, "YYYY-MM-DD");//timeZone
     const toDate = dayjs(req.query.todate as string, "YYYY-MM-DD");//timeZone
-    getMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
-        res.send(result);
-    }).catch((err) => {
-        console.error(err);
-    });
+
+    if (fromDate.get("year") < dayjs().get("year")) {
+        getYearlyMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
+            res.send(result);
+        }).catch((err) => {
+            console.error(err);
+        });
+    } else {
+        getMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
+            res.send(result);
+        }).catch((err) => {
+            console.error(err);
+        });
+    }
 })
 
-/**
- * Get monthly measurements from previous year
- * 
- * @param fromDate from date
- * @param toDate to date
- * @param ip IP address of powermeter
- * @param channel channel of powermeter (use -1 for all)
- * @returns the array of measurements
- */
-async function getYearlyMeasurementsFromDBs(fromDate: dayjs.Dayjs, toDate: dayjs.Dayjs, ip: string, channel: number): Promise<any[]> {
-    let result: any[] = [];
-    const filePath = (process.env.WORKDIR as string);
-    const dbFile = path.join(filePath, ip, fromDate.format("YYYY") + "-yearly.sqlite");
-    if (fs.existsSync(dbFile)) {
-        const db = new Database(dbFile);
-        try {
-            const fromSec = fromDate.unix();
-            const toSec = toDate.unix();
-            let filters = [fromSec, toSec];
-            if (channel) {
-                filters.push(channel);
-            }
-            let measurements = await runQuery(db, "select * from measurements where recorded_time between ? and ? " + (channel ? "and channel=?" : "") + " order by recorded_time, channel", filters);
-            measurements.forEach((element: any) => {
-                result.push(element);
-            })
-        } catch (err) {
-            console.error(dayjs().format(), err);
-        } finally {
-            db.close();
-        }
-    }
-
-    return result;
-}
+router.get("/getrawdata/count", async (req, res) => {
+})
 
 export default router;
