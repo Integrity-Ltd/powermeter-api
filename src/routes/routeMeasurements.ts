@@ -33,7 +33,7 @@ router.get("/report", async (req, res) => {
     const configDB = new Database(process.env.CONFIG_DB_FILE as string);
 
     let timeZone = dayjs.tz.guess();
-    const tzone = await runQuery(configDB, "select time_zone from power_meter where ip_address=? and enabled = 1", [ip]);
+    const tzone = await runQuery(configDB, "select time_zone from power_meter where ip_address=?", [ip]);
     if (tzone.length > 0) {
         timeZone = tzone[0].time_zone;
     }
@@ -80,7 +80,39 @@ router.get("/getrawdata", async (req, res) => {
     }
 })
 
-router.get("/getrawdata/count", async (req, res) => {
+router.get("/getaverage", async (req, res) => {
+    const filters = req.query.filters as string;
+    const jsonFilters = JSON.parse(filters);
+
+    if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+        res.status(400).send({ err: "invalid date range" });
+        return;
+    }
+
+    let measurements: any[];
+    if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
+        measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+    } else {
+        measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+    }
+
+})
+
+router.get("/getsumm", async (req, res) => {
+    const filters = req.query.filters as string;
+    const jsonFilters = JSON.parse(filters);
+
+    if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+        res.status(400).send({ err: "invalid date range" });
+        return;
+    }
+
+    let measurements: any[];
+    if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
+        measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+    } else {
+        measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+    }
 })
 
 export default router;
