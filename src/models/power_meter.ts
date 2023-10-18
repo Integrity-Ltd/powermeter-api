@@ -8,7 +8,7 @@ import Joi from "joi";
  */
 const validate = (power_meter: object): Joi.ValidationResult => {
     const schema = Joi.object().keys({
-        asset_name: Joi.string(),
+        power_meter_name: Joi.string(),
         ip_address: Joi.string().required(),
         port: Joi.number().required(),
         time_zone: Joi.string().required(),

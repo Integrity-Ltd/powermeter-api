@@ -105,9 +105,9 @@ router.put("/:id", (req, res) => {
     let valid: Joi.ValidationResult = power_meter.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
-        db.run("update power_meter set asset_name = ?, ip_address = ?, port = ?, time_zone = ?, enabled = ? where id = ? ",
+        db.run("update power_meter set power_meter_name = ?, ip_address = ?, port = ?, time_zone = ?, enabled = ? where id = ? ",
             [
-                req.body.asset_name,
+                req.body.power_meter_name,
                 req.body.ip_address,
                 req.body.port,
                 req.body.time_zone,
@@ -137,9 +137,9 @@ router.post("/", async (req, res) => {
         if (rows && rows.length > 0) {
             res.status(400).send({ message: "Duplicated IP address" });
         } else {
-            db.run("insert into power_meter (asset_name, ip_address, port, time_zone, enabled) values (?,?,?,?,?)",
+            db.run("insert into power_meter (power_meter_name, ip_address, port, time_zone, enabled) values (?,?,?,?,?)",
                 [
-                    req.body.asset_name,
+                    req.body.power_meter_name,
                     req.body.ip_address,
                     req.body.port,
                     req.body.time_zone,

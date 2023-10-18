@@ -4,7 +4,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import path from "path";
 import { Database } from "sqlite3";
-import { runQuery, getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs } from "../../../powermeter-utils/src/utils/DBUtils";
+import { runQuery, getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAverage, getPowerMeterTimeZone, getSumm } from "../../../powermeter-utils/src/utils/DBUtils";
 import fs from "fs";
 import report from "../models/report";
 import Joi from "joi";
@@ -30,13 +30,8 @@ router.get("/report", async (req, res) => {
     const channel = parseInt(req.query.channel as string);
     const multiplier = parseInt(req.query.multiplier as string);
 
-    const configDB = new Database(process.env.CONFIG_DB_FILE as string);
+    let timeZone = await getPowerMeterTimeZone(ip);
 
-    let timeZone = dayjs.tz.guess();
-    const tzone = await runQuery(configDB, "select time_zone from power_meter where ip_address=?", [ip]);
-    if (tzone.length > 0) {
-        timeZone = tzone[0].time_zone;
-    }
     const fromDate = dayjs(req.query.fromdate as string, "YYYY-MM-DD");//timeZone
     const toDate = dayjs(req.query.todate as string, "YYYY-MM-DD");//timeZone
 
@@ -82,37 +77,52 @@ router.get("/getrawdata", async (req, res) => {
 
 router.get("/getaverage", async (req, res) => {
     const filters = req.query.filters as string;
-    const jsonFilters = JSON.parse(filters);
+    let average: number[] = [];
+    try {
+        const jsonFilters = JSON.parse(filters);
 
-    if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
-        res.status(400).send({ err: "invalid date range" });
-        return;
+        if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+            res.status(400).send({ err: "invalid date range" });
+            return;
+        }
+
+        let measurements: any[];
+        if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
+            measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+        } else {
+            measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+        }
+        average = getAverage(measurements);
+    } catch (err) {
+        console.error(err);
+        return res.status(400).send({ err: "invalid query" });
     }
-
-    let measurements: any[];
-    if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
-        measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
-    } else {
-        measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
-    }
-
+    return res.send(average);
 })
 
 router.get("/getsumm", async (req, res) => {
     const filters = req.query.filters as string;
-    const jsonFilters = JSON.parse(filters);
+    let summ: number[] = [];
+    try {
+        const jsonFilters = JSON.parse(filters);
 
-    if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
-        res.status(400).send({ err: "invalid date range" });
-        return;
-    }
+        if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+            res.status(400).send({ err: "invalid date range" });
+            return;
+        }
 
-    let measurements: any[];
-    if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
-        measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
-    } else {
-        measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+        let measurements: any[];
+        if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
+            measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+        } else {
+            measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+        }
+        summ = getSumm(measurements);
+    } catch (err) {
+        console.error(err);
+        return res.status(400).send({ err: "invalid query" });
     }
+    return res.send(summ);
 })
 
 export default router;

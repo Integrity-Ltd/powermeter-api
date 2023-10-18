@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import routePowerMeter from './routes/routePowerMeter';
 import routeChannels from './routes/routeChannels';
 import routeMeasurements from './routes/routeMeasurements'
+import routeAssets from './routes/routeAssets'
 import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, "..", `${process.env.NODE_ENV ? process.env.NODE_ENV as string : ""}.env`) });
@@ -21,6 +22,7 @@ app.use(jsonParser);
 
 app.use("/api/admin/crud/power_meter", routePowerMeter);
 app.use("/api/admin/crud/channels", routeChannels);
+app.use("/api/admin/crud/assets", routeAssets);
 app.use("/api/measurements", routeMeasurements);
 
 const file = fs.readFileSync('./openapi.json', 'utf8')
