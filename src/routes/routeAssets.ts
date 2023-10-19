@@ -5,7 +5,7 @@ import assets from "../models/assets";
 const router = Router();
 
 /**
- * Get all powermeter from DB
+ * Get all assets from DB
  */
 router.get("/", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -35,7 +35,7 @@ router.get("/", (req, res) => {
 });
 
 /**
- * Get count of powermeter
+ * Get count of assets
  */
 router.get("/count", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -50,7 +50,7 @@ router.get("/count", (req, res) => {
 });
 
 /**
- * Get powermeter by ID
+ * Get asset by ID
  */
 router.get("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -65,7 +65,7 @@ router.get("/:id", (req, res) => {
 });
 
 /**
- * Delete powermeter by ID
+ * Delete asset by ID
  */
 router.delete("/:id", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
@@ -80,7 +80,7 @@ router.delete("/:id", (req, res) => {
 });
 
 /**
- * Update powermeter by ID
+ * Update asset by ID
  */
 router.put("/:id", (req, res) => {
     let valid: Joi.ValidationResult = assets.validate(req.body);
@@ -106,7 +106,7 @@ router.put("/:id", (req, res) => {
 });
 
 /**
- * Create powermeter
+ * Create asset
  */
 router.post("/", async (req, res) => {
     let valid: Joi.ValidationResult = assets.validate(req.body);
