@@ -75,20 +75,22 @@ router.get("/getrawdata", async (req, res) => {
 
 router.get("/getaverage", async (req, res) => {
     const filters = req.query.filters as string;
-    let average: number[] = [];
+    let average = [];
     try {
         const jsonFilters = JSON.parse(filters);
 
-        if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+        const fromDate = dayjs(jsonFilters.fromDate, "YYYY-MM-DD");
+        const toDate = dayjs(jsonFilters.toDate, "YYYY-MM-DD");
+        if (!fromDate.isBefore(toDate)) {
             res.status(400).send({ err: "invalid date range" });
             return;
         }
 
         let measurements: any[];
-        if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
-            measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+        if (fromDate.get("year") < dayjs().get("year")) {
+            measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
         } else {
-            measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+            measurements = await getMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
         }
         const timeZone = await getPowerMeterTimeZone(jsonFilters.ip);
         average = getAverage(measurements, timeZone);
@@ -101,20 +103,21 @@ router.get("/getaverage", async (req, res) => {
 
 router.get("/getsumm", async (req, res) => {
     const filters = req.query.filters as string;
-    let summ: number[] = [];
+    let summ: { channel: number, summ: number }[] = [];
     try {
         const jsonFilters = JSON.parse(filters);
-
-        if (!jsonFilters.fromDate.isBefore(jsonFilters.toDate)) {
+        const fromDate = dayjs(jsonFilters.fromDate, "YYYY-MM-DD");
+        const toDate = dayjs(jsonFilters.toDate, "YYYY-MM-DD");
+        if (!fromDate.isBefore(toDate)) {
             res.status(400).send({ err: "invalid date range" });
             return;
         }
 
         let measurements: any[];
-        if (jsonFilters.fromDate.get("year") < dayjs().get("year")) {
-            measurements = await getYearlyMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channel);
+        if (fromDate.get("year") < dayjs().get("year")) {
+            measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
         } else {
-            measurements = await getMeasurementsFromDBs(jsonFilters.fromDate, jsonFilters.toDate, jsonFilters.ip, jsonFilters.channels);
+            measurements = await getMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
         }
         const timeZone = await getPowerMeterTimeZone(jsonFilters.ip);
         summ = getSumm(measurements, timeZone);
