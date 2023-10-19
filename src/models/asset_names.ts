@@ -8,8 +8,7 @@ import Joi from "joi";
  */
 const validate = (assets: object): Joi.ValidationResult => {
     const schema = Joi.object().keys({
-        asset_name_id: Joi.number().required(),
-        channel_id: Joi.number().required(),
+        name: Joi.string().required(),
     });
     return schema.validate(assets);
 }

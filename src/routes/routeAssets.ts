@@ -2,6 +2,7 @@ import { Router } from "express";
 import Joi from "joi";
 import { Database } from "sqlite3";
 import assets from "../models/assets";
+import assetNames from "../models/asset_names";
 const router = Router();
 
 /**
@@ -10,8 +11,9 @@ const router = Router();
 router.get("/", (req, res) => {
     let db = new Database(process.env.CONFIG_DB_FILE as string);
     if (req.query.first && req.query.rowcount) {
-        db.all("select a.id, a.power_meter_id, a.channel_id, a.asset_name, c.channel_name, p.power_meter_name "
+        db.all("select a.id, a.channel_id, c.power_meter_id, n.id as asset_name_id, n.name as asset_name, c.channel_name, p.power_meter_name "
             + "from assets a LEFT JOIN channels c on c.id = a.channel_id "
+            + "LEFT JOIN asset_names n on n.id = a.asset_name_id "
             + "LEFT JOIN power_meter p on p.id = c.power_meter_id "
             + "limit ? offset ? ",
             [parseInt(req.query.rowcount as string), parseInt(req.query.first as string)], (err, rows) => {
@@ -50,6 +52,21 @@ router.get("/count", (req, res) => {
 });
 
 /**
+ * Get asset names
+ */
+router.get("/asset_names", (req, res) => {
+    let db = new Database(process.env.CONFIG_DB_FILE as string);
+    db.all("select * from asset_names order by name", (err, rows) => {
+        if (err) {
+            res.send(JSON.stringify({ "error": err.message }));
+        } else {
+            res.send(rows);
+        }
+        db.close();
+    });
+});
+
+/**
  * Get asset by ID
  */
 router.get("/:id", (req, res) => {
@@ -77,6 +94,7 @@ router.delete("/:id", (req, res) => {
         }
         db.close();
     });
+    cleanupAssetNames();
 });
 
 /**
@@ -86,10 +104,9 @@ router.put("/:id", (req, res) => {
     let valid: Joi.ValidationResult = assets.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
-        db.run("update assets set asset_name = ?, power_meter_id = ?, channel_id = ? where id = ? ",
+        db.run("update assets set asset_name_id = ?, channel_id = ? where id = ? ",
             [
-                req.body.asset_name,
-                req.body.power_meter_id,
+                req.body.asset_name_id,
                 req.body.channel_id,
                 req.params.id
             ], function (err) {
@@ -103,6 +120,7 @@ router.put("/:id", (req, res) => {
     } else {
         res.status(400).send({ message: valid.error });
     }
+    cleanupAssetNames();
 });
 
 /**
@@ -112,10 +130,9 @@ router.post("/", async (req, res) => {
     let valid: Joi.ValidationResult = assets.validate(req.body);
     if (!valid.error) {
         let db = new Database(process.env.CONFIG_DB_FILE as string);
-        db.run("insert into assets (asset_name, power_meter_id, channel_id) values (?,?,?)",
+        db.run("insert into assets (asset_name_id, channel_id) values (?,?)",
             [
-                req.body.asset_name,
-                req.body.power_meter_id,
+                req.body.asset_name_id,
                 req.body.channel_id,
             ], async function (err) {
                 if (err) {
@@ -129,5 +146,30 @@ router.post("/", async (req, res) => {
         res.status(400).send({ message: valid.error });
     }
 });
+
+router.post("/asset_names", async (req, res) => {
+    let valid: Joi.ValidationResult = assetNames.validate(req.body);
+    if (!valid.error) {
+        let db = new Database(process.env.CONFIG_DB_FILE as string);
+        db.run("insert into asset_names (name) values (?)",
+            [
+                req.body.name,
+            ], async function (err) {
+                if (err) {
+                    res.send(JSON.stringify({ "error": err.message }));
+                } else {
+                    res.send({ lastID: this.lastID });
+                }
+                db.close();
+            }
+        )
+    } else {
+        res.status(400).send({ message: valid.error });
+    }
+});
+
+function cleanupAssetNames() {
+
+}
 
 export default router;

@@ -4,7 +4,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import path from "path";
 import { Database } from "sqlite3";
-import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAverage, getPowerMeterTimeZone, getSumm } from "../../../powermeter-utils/src/utils/DBUtils";
+import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSumm, getPowerMeterTimeZone } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
 import { get } from "http";
@@ -73,59 +73,35 @@ router.get("/getrawdata", async (req, res) => {
     }
 })
 
-router.get("/getaverage", async (req, res) => {
-    const filters = req.query.filters as string;
+router.get("/getavgsumm", async (req, res) => {
     let average = [];
     try {
-        const jsonFilters = JSON.parse(filters);
-
-        const fromDate = dayjs(jsonFilters.fromDate, "YYYY-MM-DD");
-        const toDate = dayjs(jsonFilters.toDate, "YYYY-MM-DD");
+        const fromDate = dayjs(req.query.fromDate as string, "YYYY-MM-DD");
+        const toDate = dayjs(req.query.toDate as string, "YYYY-MM-DD");
         if (!fromDate.isBefore(toDate)) {
             res.status(400).send({ err: "invalid date range" });
             return;
         }
 
+        const channels = req.query.channels as string;
+        let channelsArray: number | number[] | undefined = undefined;
+        if (channels) {
+            channelsArray = channels.split(",").map((element) => { return parseInt(element) });
+        }
+
         let measurements: any[];
         if (fromDate.get("year") < dayjs().get("year")) {
-            measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
+            measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
         } else {
-            measurements = await getMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
+            measurements = await getMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
         }
-        const timeZone = await getPowerMeterTimeZone(jsonFilters.ip);
-        average = getAverage(measurements, timeZone);
+        const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
+        average = getAvgSumm(measurements, timeZone);
     } catch (err) {
         console.error(err);
         return res.status(400).send({ err: "invalid query" });
     }
     return res.send(average);
-})
-
-router.get("/getsumm", async (req, res) => {
-    const filters = req.query.filters as string;
-    let summ: { channel: number, summ: number }[] = [];
-    try {
-        const jsonFilters = JSON.parse(filters);
-        const fromDate = dayjs(jsonFilters.fromDate, "YYYY-MM-DD");
-        const toDate = dayjs(jsonFilters.toDate, "YYYY-MM-DD");
-        if (!fromDate.isBefore(toDate)) {
-            res.status(400).send({ err: "invalid date range" });
-            return;
-        }
-
-        let measurements: any[];
-        if (fromDate.get("year") < dayjs().get("year")) {
-            measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
-        } else {
-            measurements = await getMeasurementsFromDBs(fromDate, toDate, jsonFilters.ip, jsonFilters.channels);
-        }
-        const timeZone = await getPowerMeterTimeZone(jsonFilters.ip);
-        summ = getSumm(measurements, timeZone);
-    } catch (err) {
-        console.error(err);
-        return res.status(400).send({ err: "invalid query" });
-    }
-    return res.send(summ);
 })
 
 export default router;
