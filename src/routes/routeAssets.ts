@@ -169,7 +169,21 @@ router.post("/asset_names", async (req, res) => {
 });
 
 function cleanupAssetNames() {
+    const sql = "delete from asset_names where id in ("
+        + "select nid from (select a.id as aid, n.id as nid, count(n.id)"
+        + " from asset_names n"
+        + " left join assets a on a.asset_name_id = n.id"
+        + " group by n.id"
+        + " having a.id is null))";
+    let db = new Database(process.env.CONFIG_DB_FILE as string);
+    db.run(sql, (err) => {
+        if (err) {
+            console.error(err);
+        } else {
 
+        }
+        db.close();
+    })
 }
 
 export default router;

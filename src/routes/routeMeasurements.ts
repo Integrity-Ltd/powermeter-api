@@ -2,9 +2,8 @@ import { Router } from "express";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
-import path from "path";
 import { Database } from "sqlite3";
-import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSumm, getPowerMeterTimeZone } from "../../../powermeter-utils/src/utils/DBUtils";
+import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSumm, getPowerMeterTimeZone, runQuery } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
 import { get } from "http";
@@ -102,6 +101,53 @@ router.get("/getavgsumm", async (req, res) => {
         return res.status(400).send({ err: "invalid query" });
     }
     return res.send(average);
+})
+
+router.get("/statistics", async (req, res) => {
+    let average: any[] = [];
+    try {
+        let fromDate: dayjs.Dayjs = dayjs();
+        const toDate = dayjs();
+        switch (req.query.details) {
+            case "1d": fromDate = toDate.add(-1, "day").add(-1, "hour"); break
+            case "30d": fromDate = toDate.add(-30, "day").add(-1, "hour"); break
+            default: fromDate = toDate.add(-2, "hour");
+        }
+
+        if (!fromDate.isBefore(toDate)) {
+            res.status(400).send({ err: "invalid date range" });
+            return;
+        }
+
+        const assetNameId = parseInt(req.query.asset_name_id as string);
+
+        const sql = "select p.ip_address, c.channel from assets a"
+            + " join channels c on c.id = a.channel_id"
+            + " join power_meter p on p.id = c.power_meter_id"
+            + " where asset_name_id = ? ";
+        const db = new Database(process.env.CONFIG_DB_FILE as string);
+        const rows = await runQuery(db, sql, [assetNameId])
+
+        for (const row of rows) {
+            let measurements: any[];
+            if (fromDate.get("year") < dayjs().get("year")) {
+                measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
+            } else {
+                measurements = await getMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
+            }
+            const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
+            const calculated = getAvgSumm(measurements, timeZone);
+            calculated.forEach((element) => {
+                average.push({
+                    ip_address: row.ip_address, channel: element.channel, summ: element.summ, avg: element.avg
+                });
+            });
+        }
+        return res.send(average);
+    } catch (err) {
+        console.error(err);
+        return res.status(400).send({ err: "invalid query" });
+    }
 })
 
 export default router;
