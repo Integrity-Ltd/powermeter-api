@@ -6,7 +6,6 @@ import { Database } from "sqlite3";
 import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSumm, getPowerMeterTimeZone, runQuery } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
-import { get } from "http";
 
 const router = Router();
 dayjs.extend(utc)
