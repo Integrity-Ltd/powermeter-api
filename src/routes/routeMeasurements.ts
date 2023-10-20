@@ -120,7 +120,7 @@ router.get("/statistics", async (req, res) => {
 
         const assetNameId = parseInt(req.query.asset_name_id as string);
 
-        const sql = "select p.ip_address, p.power_meter_name, c.channel from assets a"
+        const sql = "select p.ip_address, p.power_meter_name, c.channel, c.channel_name from assets a"
             + " join channels c on c.id = a.channel_id"
             + " join power_meter p on p.id = c.power_meter_id"
             + " where asset_name_id = ? ";
@@ -138,7 +138,7 @@ router.get("/statistics", async (req, res) => {
             const calculated = getAvgSumm(measurements, timeZone);
             calculated.forEach((element) => {
                 average.push({
-                    ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, summ: element.summ, avg: element.avg
+                    ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, summ: element.summ, avg: element.avg
                 });
             });
         }
