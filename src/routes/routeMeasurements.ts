@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { Database } from "sqlite3";
-import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSumm, getPowerMeterTimeZone, runQuery } from "../../../powermeter-utils/src/utils/DBUtils";
+import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getAvgSum, getPowerMeterTimeZone, runQuery } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
 
@@ -71,7 +71,7 @@ router.get("/getrawdata", async (req, res) => {
     }
 })
 
-router.get("/getavgsumm", async (req, res) => {
+router.get("/getavgsum", async (req, res) => {
     let average = [];
     try {
         const fromDate = dayjs(req.query.fromDate as string, "YYYY-MM-DD");
@@ -94,7 +94,7 @@ router.get("/getavgsumm", async (req, res) => {
             measurements = await getMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
         }
         const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
-        average = getAvgSumm(measurements, timeZone);
+        average = getAvgSum(measurements, timeZone);
     } catch (err) {
         console.error(err);
         return res.status(400).send({ err: "invalid query" });
@@ -120,7 +120,8 @@ router.get("/statistics", async (req, res) => {
 
         const assetNameId = parseInt(req.query.asset_name_id as string);
 
-        const sql = "select p.ip_address, p.power_meter_name, c.channel, c.channel_name from assets a"
+        const sql = "select n.name, p.ip_address, p.power_meter_name, c.channel, c.channel_name from assets a"
+            + " join asset_names n on n.id = a.asset_name_id"
             + " join channels c on c.id = a.channel_id"
             + " join power_meter p on p.id = c.power_meter_id"
             + " where asset_name_id = ? ";
@@ -135,10 +136,10 @@ router.get("/statistics", async (req, res) => {
                 measurements = await getMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
             }
             const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
-            const calculated = getAvgSumm(measurements, timeZone);
-            calculated.forEach((element) => {
+            const calculated = getAvgSum(measurements, timeZone);
+            calculated.forEach((element: any) => {
                 average.push({
-                    ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, summ: element.summ, avg: element.avg
+                    asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: element.sum, avg: element.avg
                 });
             });
         }
