@@ -3,10 +3,9 @@ import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { Database } from "sqlite3";
-import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getPowerMeterTimeZone, runQuery, getAvgSum } from "../../../powermeter-utils/src/utils/DBUtils";
+import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getPowerMeterTimeZone, runQuery, getAvgSum, roundToFourDecimals } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
-import * as mathjs from 'mathjs';
 
 const router = Router();
 dayjs.extend(utc)
@@ -141,7 +140,7 @@ router.get("/statistics", async (req, res) => {
             const calculated = getAvgSum(measurements, timeZone);
             calculated.forEach((element: any) => {
                 average.push({
-                    asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: Number(element.sum), avg: Number(mathjs.round(element.avg, 4))
+                    asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: Number(element.sum), avg: Number(roundToFourDecimals(element.avg))
                 });
             });
         }
