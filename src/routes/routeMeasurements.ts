@@ -139,7 +139,7 @@ router.get("/statistics", async (req, res) => {
             const calculated = getAvgSum(measurements, timeZone);
             calculated.forEach((element: any) => {
                 average.push({
-                    asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: element.sum, avg: element.avg
+                    asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: Number(element.sum), avg: Number(element.avg)
                 });
             });
         }
