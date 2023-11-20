@@ -3,9 +3,10 @@ import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { Database } from "sqlite3";
-import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getPowerMeterTimeZone, runQuery, getAvgSum, roundToFourDecimals } from "../../../powermeter-utils/src/utils/DBUtils";
+import { getMeasurementsFromDBs, getDetails, getYearlyMeasurementsFromDBs, getPowerMeterTimeZone, runQuery, getAvgSum, roundToFourDecimals, ResultAVG } from "../../../powermeter-utils/src/utils/DBUtils";
 import report from "../models/report";
 import Joi from "joi";
+import { Measurement, RecElement } from "../../../powermeter-utils/src/utils/types";
 
 const router = Router();
 dayjs.extend(utc)
@@ -37,15 +38,15 @@ router.get("/report", async (req, res) => {
         return res.status(400).send({ err: "invalid date range" });
     }
 
-    let measurements: any[];
+    let measurements: Measurement[];
     if (fromDate.get("year") < dayjs().get("year")) {
         measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, ip, channel);
     } else {
         measurements = await getMeasurementsFromDBs(fromDate, toDate, ip, channel);
     }
     let result = getDetails(measurements, powermeterTimeZone, details, false);
-    result = result.map((element: any) => {
-        element.multipliedValue = element.diff * multiplier;
+    result = result.map((element: RecElement) => {
+        element.multipliedValue = roundToFourDecimals(element.diff ? element.diff * multiplier : 0);
         return element;
     })
     return res.send(result);
@@ -88,7 +89,7 @@ router.get("/getavgsum", async (req, res) => {
             channelsArray = channels.split(",").map((element) => { return parseInt(element) });
         }
 
-        let measurements: any[];
+        let measurements: Measurement[];
         if (fromDate.get("year") < dayjs().get("year")) {
             measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
         } else {
@@ -103,8 +104,18 @@ router.get("/getavgsum", async (req, res) => {
     return res.send(average);
 })
 
+interface StatisticRow {
+    asset_name: string,
+    ip_address: string,
+    power_meter_name: string,
+    channel: number,
+    channel_name: string,
+    sum: Number,
+    avg: Number
+}
+
 router.get("/statistics", async (req, res) => {
-    let average: any[] = [];
+    let average: StatisticRow[] = [];
     try {
         let fromDate: dayjs.Dayjs = dayjs();
         const toDate = dayjs();
@@ -130,7 +141,7 @@ router.get("/statistics", async (req, res) => {
         const rows = await runQuery(db, sql, [assetNameId])
 
         for (const row of rows) {
-            let measurements: any[];
+            let measurements: Measurement[];
             if (fromDate.get("year") < dayjs().get("year")) {
                 measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
             } else {
@@ -138,7 +149,7 @@ router.get("/statistics", async (req, res) => {
             }
             const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
             const calculated = getAvgSum(measurements, timeZone);
-            calculated.forEach((element: any) => {
+            calculated.forEach((element: ResultAVG) => {
                 average.push({
                     asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: Number(element.sum), avg: Number(roundToFourDecimals(element.avg))
                 });
