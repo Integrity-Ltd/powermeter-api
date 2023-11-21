@@ -149,7 +149,7 @@ router.post("/", async (req, res) => {
                         res.send(JSON.stringify({ "error": err.message }));
                     } else {
                         const lastID = this.lastID;
-                        let message: any[] = [];
+                        let message: { message?: string, lastID?: number }[] = [];
                         message.push({ lastID: lastID });
                         const insertMoment = dayjs();
                         const filePath = (process.env.WORKDIR as string);
