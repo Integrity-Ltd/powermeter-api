@@ -117,7 +117,7 @@
 				"ts-expect-error": "allow-with-description"
 			}
 		],
-		"@typescript-eslint/no-parameter-properties": "error",
+		"@typescript-eslint/no-parameter-properties": "off",
 		"eqeqeq": [
 			"error",
 			"always",

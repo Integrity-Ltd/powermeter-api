@@ -25,17 +25,20 @@ app.use("/api/admin/crud/channels", routeChannels);
 app.use("/api/admin/crud/assets", routeAssets);
 app.use("/api/measurements", routeMeasurements);
 
-const file = fs.readFileSync("./openapi.json", "utf8");
-const swaggerDocument = JSON.parse(file);
+const FILE = fs.readFileSync("./openapi.json", "utf8");
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const swaggerDocument = JSON.parse(FILE);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const router = Router();
-router.get("/json", (req, res) => {
+router.get("/json", (_req, res) => {
 	res.send(swaggerDocument);
 });
 app.use("/api", router);
 
 const server = app.listen(port, () => {
+	// eslint-disable-next-line no-console
 	console.log(`App is running at http://localhost:${port}`);
 });
 
