@@ -1,4 +1,4 @@
-import Joi from "joi";
+import joi from "joi";
 
 /**
  * Validate powermeter with Joi
@@ -6,9 +6,9 @@ import Joi from "joi";
  * @param assets the powermeter object to validate
  * @returns true if validation successfully done
  */
-const validate = (assets: object): Joi.ValidationResult => {
-	const schema = Joi.object().keys({
-		name: Joi.string().required(),
+const validate = (assets: object): joi.ValidationResult => {
+	const schema = joi.object().keys({
+		name: joi.string().required(),
 	});
 	return schema.validate(assets);
 };

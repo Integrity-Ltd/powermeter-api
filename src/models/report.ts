@@ -1,4 +1,4 @@
-import Joi from "joi";
+import joi from "joi";
 
 /**
  * Validate report request with Joi
@@ -6,14 +6,14 @@ import Joi from "joi";
  * @param report the report object to validate
  * @returns true if validation successfully done
  */
-const validate = (report: object): Joi.ValidationResult => {
-	const schema = Joi.object().keys({
-		fromdate: Joi.string().isoDate().required(),
-		todate: Joi.string().isoDate().required(),
-		ip: Joi.string().ip().required(),
-		channel: Joi.optional(),
-		details: Joi.string().regex(/^(hourly|daily|monthly)$/).required(),
-		multiplier: Joi.optional(),
+const validate = (report: object): joi.ValidationResult => {
+	const schema = joi.object().keys({
+		fromdate: joi.string().isoDate().required(),
+		todate: joi.string().isoDate().required(),
+		ip: joi.string().ip().required(),
+		channel: joi.optional(),
+		details: joi.string().regex(/^(hourly|daily|monthly)$/).required(),
+		multiplier: joi.optional(),
 	});
 	return schema.validate(report);
 };
