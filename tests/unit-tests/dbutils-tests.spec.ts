@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 
 describe("Utils tests", () => {
 	beforeEach(() => { });
-	it("DBUtils getDBFilePath should be string", async () => {
+	it("DBUtils getDBFilePath should be string", () => {
 		const ip = "192.168.1.237";
 		const filePath = getDBFilePath(ip);
 		const matchPath = path.join(process.env.WORKDIR as string, ip);

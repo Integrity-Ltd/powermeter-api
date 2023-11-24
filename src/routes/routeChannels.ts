@@ -4,6 +4,17 @@ import Joi from "joi";
 import { Database } from "sqlite3";
 const router = Router();
 
+interface ChannelBody {
+	power_meter_id: number;
+	channel: number;
+	channel_name: string;
+	enabled: boolean;
+}
+
+interface Filter {
+	power_meter_id: string;
+}
+
 /**
  * Get all channels
  */
@@ -20,7 +31,8 @@ router.get("/", (req, res) => {
 		});
 	} else if (req.query.filter) {
 		try {
-			const filter = JSON.parse(decodeURIComponent(req.query.filter as string));
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			const filter: Filter = JSON.parse(decodeURIComponent(req.query.filter as string));
 			if (filter.power_meter_id) {
 				db.all("select * from channels where power_meter_id=?", [parseInt(filter.power_meter_id)], (err, rows) => {
 					if (err) {
@@ -95,15 +107,16 @@ router.delete("/:id", (req, res) => {
  * Update channel by ID
  */
 router.put("/:id", (req, res) => {
-	const valid: Joi.ValidationResult = channels.validate(req.body);
+	const body: ChannelBody = req.body as ChannelBody;
+	const valid: Joi.ValidationResult = channels.validate(body);
 	if (!valid.error) {
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("update channels set power_meter_id = ?, channel = ?, channel_name = ?, enabled = ? where id = ? ",
 			[
-				req.body.power_meter_id,
-				req.body.channel,
-				req.body.channel_name,
-				req.body.enabled,
+				body.power_meter_id,
+				body.channel,
+				body.channel_name,
+				body.enabled,
 				req.params.id,
 			], function (err) {
 				if (err) {
@@ -122,15 +135,16 @@ router.put("/:id", (req, res) => {
  * Create channel
  */
 router.post("/", (req, res) => {
-	const valid: Joi.ValidationResult = channels.validate(req.body);
+	const body: ChannelBody = req.body as ChannelBody;
+	const valid: Joi.ValidationResult = channels.validate(body);
 	if (!valid.error) {
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("insert into channels (power_meter_id, channel, channel_name, enabled) values (?,?,?,?)",
 			[
-				req.body.power_meter_id,
-				req.body.channel,
-				req.body.channel_name,
-				req.body.enabled,
+				body.power_meter_id,
+				body.channel,
+				body.channel_name,
+				body.enabled,
 			], function (err) {
 				if (err) {
 					res.send(JSON.stringify({ "error": err.message }));

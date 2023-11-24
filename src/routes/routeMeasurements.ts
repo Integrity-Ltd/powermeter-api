@@ -15,10 +15,12 @@ dayjs.extend(timezone);
 /**
  * Report measurements
  */
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/report", async (req, res) => {
 	const valid: Joi.ValidationResult = report.validate(req.query);
 
 	if (valid.error) {
+		// eslint-disable-next-line
 		console.log("Invalid query!");
 		return res.status(400).send({ err: valid.error.message });
 	}
@@ -39,6 +41,7 @@ router.get("/report", async (req, res) => {
 
 	let measurements: Measurement[];
 	if (fromDate.get("year") < dayjs().get("year")) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
 		measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, ip, channel);
 	} else {
 		measurements = await getMeasurementsFromDBs(fromDate, toDate, ip, channel);
@@ -51,7 +54,7 @@ router.get("/report", async (req, res) => {
 	return res.send(result);
 });
 
-router.get("/getrawdata", async (req, res) => {
+router.get("/getrawdata", (req, res) => {
 	const ip = req.query.ip as string;
 	const channel = parseInt(req.query.channel as string);
 	const fromDate = dayjs(req.query.fromdate as string, "YYYY-MM-DD");//timeZone
@@ -61,17 +64,20 @@ router.get("/getrawdata", async (req, res) => {
 		getYearlyMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
 			return res.send(result);
 		}).catch((err) => {
+			// eslint-disable-next-line
 			console.error(err);
 		});
 	} else {
 		getMeasurementsFromDBs(fromDate, toDate, ip, channel).then((result) => {
 			return res.send(result);
 		}).catch((err) => {
+			// eslint-disable-next-line
 			console.error(err);
 		});
 	}
 });
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/getavgsum", async (req, res) => {
 	let average = [];
 	try {
@@ -92,6 +98,7 @@ router.get("/getavgsum", async (req, res) => {
 
 		let measurements: Measurement[];
 		if (fromDate.get("year") < dayjs().get("year")) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
 			measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
 		} else {
 			measurements = await getMeasurementsFromDBs(fromDate, toDate, req.query.ip as string, channelsArray);
@@ -99,6 +106,7 @@ router.get("/getavgsum", async (req, res) => {
 		const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
 		average = getAvgSum(measurements, timeZone);
 	} catch (err) {
+		// eslint-disable-next-line
 		console.error(err);
 		return res.status(400).send({ err: "invalid query" });
 	}
@@ -115,6 +123,7 @@ interface StatisticRow {
 	avg: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.get("/statistics", async (req, res) => {
 	const average: StatisticRow[] = [];
 	try {
@@ -134,30 +143,35 @@ router.get("/statistics", async (req, res) => {
 		const assetNameId = parseInt(req.query.asset_name_id as string);
 
 		const sql = "select n.name, p.ip_address, p.power_meter_name, c.channel, c.channel_name from assets a"
-            + " join asset_names n on n.id = a.asset_name_id"
-            + " join channels c on c.id = a.channel_id"
-            + " join power_meter p on p.id = c.power_meter_id"
-            + " where asset_name_id = ? ";
+			+ " join asset_names n on n.id = a.asset_name_id"
+			+ " join channels c on c.id = a.channel_id"
+			+ " join power_meter p on p.id = c.power_meter_id"
+			+ " where asset_name_id = ? ";
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const rows = await runQuery(db, sql, [assetNameId]);
 
 		for (const row of rows) {
 			let measurements: Measurement[];
 			if (fromDate.get("year") < dayjs().get("year")) {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
 				measurements = await getYearlyMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
 			} else {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
 				measurements = await getMeasurementsFromDBs(fromDate, toDate, row.ip_address, row.channel);
 			}
 			const timeZone = await getPowerMeterTimeZone(req.query.ip as string);
 			const calculated = getAvgSum(measurements, timeZone);
 			calculated.forEach((element: ResultAVG) => {
 				average.push({
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
 					asset_name: row.name, ip_address: row.ip_address, power_meter_name: row.power_meter_name, channel: element.channel, channel_name: row.channel_name, sum: Number(element.sum), avg: Number(roundToFourDecimals(element.avg)),
 				});
 			});
 		}
 		return res.send(average);
 	} catch (err) {
+		// eslint-disable-next-line
 		console.error(err);
 		return res.status(400).send({ err: "invalid query" });
 	}
