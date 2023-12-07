@@ -6,7 +6,7 @@ import joi from "joi";
  * @param assets the powermeter object to validate
  * @returns true if validation successfully done
  */
-const validate = (assets: object): joi.ValidationResult => {
+const validate = (assets: unknown): joi.ValidationResult => {
 	const schema = joi.object().keys({
 		asset_name_id: joi.number().required(),
 		channel_id: joi.number().required(),

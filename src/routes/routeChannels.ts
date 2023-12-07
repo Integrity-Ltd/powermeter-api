@@ -1,7 +1,7 @@
 import { Router } from "express";
 import channels from "../models/channels";
-import Joi from "joi";
 import { Database } from "sqlite3";
+
 const router = Router();
 
 interface ChannelBody {
@@ -107,16 +107,20 @@ router.delete("/:id", (req, res) => {
  * Update channel by ID
  */
 router.put("/:id", (req, res) => {
-	const body: ChannelBody = req.body as ChannelBody;
-	const valid: Joi.ValidationResult = channels.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid = channels.validate(jsonObj);
 	if (!valid.error) {
+		const channelBody: ChannelBody = valid.value as ChannelBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("update channels set power_meter_id = ?, channel = ?, channel_name = ?, enabled = ? where id = ? ",
 			[
-				body.power_meter_id,
-				body.channel,
-				body.channel_name,
-				body.enabled,
+				channelBody.power_meter_id,
+				channelBody.channel,
+				channelBody.channel_name,
+				channelBody.enabled,
 				req.params.id,
 			], function (err) {
 				if (err) {
@@ -129,22 +133,27 @@ router.put("/:id", (req, res) => {
 	} else {
 		res.status(400).send({ message: valid.error });
 	}
+
 });
 
 /**
  * Create channel
  */
 router.post("/", (req, res) => {
-	const body: ChannelBody = req.body as ChannelBody;
-	const valid: Joi.ValidationResult = channels.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid = channels.validate(jsonObj);
 	if (!valid.error) {
+		const channelBody: ChannelBody = valid.value as ChannelBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("insert into channels (power_meter_id, channel, channel_name, enabled) values (?,?,?,?)",
 			[
-				body.power_meter_id,
-				body.channel,
-				body.channel_name,
-				body.enabled,
+				channelBody.power_meter_id,
+				channelBody.channel,
+				channelBody.channel_name,
+				channelBody.enabled,
 			], function (err) {
 				if (err) {
 					res.send(JSON.stringify({ "error": err.message }));

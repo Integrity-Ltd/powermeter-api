@@ -6,7 +6,7 @@ import joi from "joi";
  * @param report the report object to validate
  * @returns true if validation successfully done
  */
-const validate = (report: object): joi.ValidationResult => {
+const validate = (report: unknown): joi.ValidationResult => {
 	const schema = joi.object().keys({
 		fromdate: joi.string().isoDate().required(),
 		todate: joi.string().isoDate().required(),

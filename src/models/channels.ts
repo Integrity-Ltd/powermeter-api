@@ -6,7 +6,7 @@ import joi from "joi";
  * @param channels the channel object to validate
  * @returns true if validation successfully done
  */
-const validate = (channels: object): joi.ValidationResult => {
+const validate = (channels: unknown) => {
 	const schema = joi.object().keys({
 		power_meter_id: joi.number().required(),
 		channel: joi.number().required(),

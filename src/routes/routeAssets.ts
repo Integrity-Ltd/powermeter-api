@@ -106,14 +106,18 @@ router.delete("/:id", (req, res) => {
  * Update asset by ID
  */
 router.put("/:id", (req, res) => {
-	const body: AssetsBody = req.body as AssetsBody;
-	const valid: joi.ValidationResult = assets.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid: joi.ValidationResult = assets.validate(jsonObj);
 	if (!valid.error) {
+		const assetBody: AssetsBody = valid.value as AssetsBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("update assets set asset_name_id = ?, channel_id = ? where id = ? ",
 			[
-				body.asset_name_id,
-				body.channel_id,
+				assetBody.asset_name_id,
+				assetBody.channel_id,
 				req.params.id,
 			], function (err) {
 				if (err) {
@@ -133,14 +137,18 @@ router.put("/:id", (req, res) => {
  * Create asset
  */
 router.post("/", (req, res) => {
-	const body: AssetsBody = req.body as AssetsBody;
-	const valid: joi.ValidationResult = assets.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid: joi.ValidationResult = assets.validate(jsonObj);
 	if (!valid.error) {
+		const assetBody: AssetsBody = valid.value as AssetsBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("insert into assets (asset_name_id, channel_id) values (?,?)",
 			[
-				body.asset_name_id,
-				body.channel_id,
+				assetBody.asset_name_id,
+				assetBody.channel_id,
 			], function (err) {
 				if (err) {
 					res.send(JSON.stringify({ "error": err.message }));

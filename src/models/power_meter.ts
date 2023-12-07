@@ -6,7 +6,7 @@ import joi from "joi";
  * @param power_meter the powermeter object to validate
  * @returns true if validation successfully done
  */
-const validate = (power_meter: object): joi.ValidationResult => {
+const validate = (power_meter: unknown): joi.ValidationResult => {
 	const schema = joi.object().keys({
 		power_meter_name: joi.string(),
 		ip_address: joi.string().required(),

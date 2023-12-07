@@ -118,17 +118,21 @@ interface PowerMeterBody extends PowerMeter {
  * Update powermeter by ID
  */
 router.put("/:id", (req, res) => {
-	const body: PowerMeterBody = req.body as PowerMeterBody;
-	const valid: Joi.ValidationResult = power_meter.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid: Joi.ValidationResult = power_meter.validate(jsonObj);
 	if (!valid.error) {
+		const powerMeterBody: PowerMeterBody = valid.value as PowerMeterBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		db.run("update power_meter set power_meter_name = ?, ip_address = ?, port = ?, time_zone = ?, enabled = ? where id = ? ",
 			[
-				body.power_meter_name,
-				body.ip_address,
-				body.port,
-				body.time_zone,
-				body.enabled,
+				powerMeterBody.power_meter_name,
+				powerMeterBody.ip_address,
+				powerMeterBody.port,
+				powerMeterBody.time_zone,
+				powerMeterBody.enabled,
 				req.params.id,
 			], function (err) {
 				if (err) {
@@ -148,23 +152,27 @@ router.put("/:id", (req, res) => {
  */
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.post("/", async (req, res) => {
-	const body: PowerMeterBody = req.body as PowerMeterBody;
-	const valid: Joi.ValidationResult = power_meter.validate(body);
+	const jsonObj: unknown = req.body as unknown;
+	if (typeof jsonObj !== "object") {
+		throw new Error("Body not an object");
+	}
+	const valid: Joi.ValidationResult = power_meter.validate(jsonObj);
 	if (!valid.error) {
+		const powerMeterBody: PowerMeterBody = valid.value as PowerMeterBody;
 		const db = new Database(process.env.CONFIG_DB_FILE as string);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const rows = await runQuery(db, "select * from power_meter where ip_address=?", [body.ip_address]);
+		const rows = await runQuery(db, "select * from power_meter where ip_address=?", [powerMeterBody.ip_address]);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		if (rows && rows.length > 0) {
 			res.status(400).send({ message: "Duplicated IP address" });
 		} else {
 			db.run("insert into power_meter (power_meter_name, ip_address, port, time_zone, enabled) values (?,?,?,?,?)",
 				[
-					body.power_meter_name,
-					body.ip_address,
-					body.port,
-					body.time_zone,
-					body.enabled,
+					powerMeterBody.power_meter_name,
+					powerMeterBody.ip_address,
+					powerMeterBody.port,
+					powerMeterBody.time_zone,
+					powerMeterBody.enabled,
 					// eslint-disable-next-line @typescript-eslint/no-misused-promises
 				], async function (err) {
 					if (err) {
@@ -175,7 +183,7 @@ router.post("/", async (req, res) => {
 						message.push({ lastID });
 						const insertMoment = dayjs();
 						const filePath = (process.env.WORKDIR as string);
-						const subdir = path.join(filePath, body.ip_address);
+						const subdir = path.join(filePath, powerMeterBody.ip_address);
 						if (!fs.existsSync(subdir)) {
 							fs.mkdirSync(subdir, { recursive: true });
 						}
@@ -200,7 +208,7 @@ router.post("/", async (req, res) => {
 								channels.push(i.toString());
 							}
 							measurementsDB.close();
-							const result = await getMeasurementsFromPowerMeter(dayjs(), body, channels);
+							const result = await getMeasurementsFromPowerMeter(dayjs(), powerMeterBody, channels);
 							// eslint-disable-next-line no-console
 							console.log(result);
 						} catch (createErr) {
